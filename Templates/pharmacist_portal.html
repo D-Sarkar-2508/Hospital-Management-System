@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pharmacist Portal – DS Hospital</title>
+<link rel="stylesheet" href="/static/css/main.css">
+<link rel="stylesheet" href="/static/css/portal.css">
+</head>
+<body class="portal-body">
+
+<div class="portal-header">
+  <div class="portal-header-inner">
+    <a href="/" class="portal-logo">⚕ DS Hospital</a>
+    <div class="portal-user">
+      <span class="portal-user-name">💊 {{ pharmacist.name }}</span>
+      <button class="btn-outline-white" onclick="openProfileModal()">My Profile</button>
+      <button class="btn-danger-sm" onclick="doLogout()">Logout</button>
+    </div>
+  </div>
+</div>
+
+<div class="portal-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="portal-sidebar">
+    <nav class="sidebar-nav">
+      <button class="nav-item active" onclick="showSection('today', this)">📅 Today's Tests</button>
+      <button class="nav-item" onclick="showSection('all', this)">📋 All Bookings</button>
+      <button class="nav-item" onclick="showSection('reports', this)">📄 Set Report Dates</button>
+    </nav>
+  </aside>
+
+  <main class="portal-main">
+
+    <!-- ── TODAY'S TESTS ── -->
+    <section id="sec-today" class="portal-section active">
+      <h2 class="section-title">Today's Test Bookings</h2>
+      <p class="section-sub">Patients scheduled for lab tests today</p>
+      <div id="todayList" class="info-list">
+        <p class="empty-msg">Loading...</p>
+      </div>
+    </section>
+
+    <!-- ── ALL BOOKINGS ── -->
+    <section id="sec-all" class="portal-section">
+      <h2 class="section-title">All Test Bookings</h2>
+      <p class="section-sub">Complete history of all test bookings</p>
+      <div id="allList" class="info-list">
+        <p class="empty-msg">Loading...</p>
+      </div>
+    </section>
+
+    <!-- ── REPORT DATES ── -->
+    <section id="sec-reports" class="portal-section">
+      <h2 class="section-title">Set Report Dates</h2>
+      <p class="section-sub">
+        Set the expected report delivery date for completed tests.
+        Patients will see this date in their portal.
+      </p>
+      <div id="reportSection" class="info-list">
+        <p class="empty-msg">Loading...</p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PROFILE MODAL
+═══════════════════════════════════════════ -->
+<div id="profileModal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeProfileModal()">✕</button>
+    <h2 class="modal-title">💊 My Profile</h2>
+    <div class="form-group">
+      <label>Full Name</label>
+      <input type="text" id="profName" value="{{ pharmacist.name }}">
+    </div>
+    <div class="form-group">
+      <label>Address</label>
+      <input type="text" id="profAddress" value="{{ pharmacist.address or '' }}">
+    </div>
+    <div class="form-group">
+      <label>Age</label>
+      <input type="number" id="profAge" value="{{ pharmacist.age or '' }}" min="1" max="100">
+    </div>
+    <div class="form-group">
+      <label>Blood Group</label>
+      <select id="profBlood">
+        <option value="">-- Select Blood Group --</option>
+        {% for bg in ['A+','A-','B+','B-','AB+','AB-','O+','O-'] %}
+        <option value="{{ bg }}" {% if pharmacist.blood_group == bg %}selected{% endif %}>{{ bg }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button class="btn-primary full-width" onclick="saveProfile()">Save Profile</button>
+    <p id="profMsg" class="form-msg"></p>
+  </div>
+</div>
+
+<script>
+function showSection(name, btn) {
+  document.querySelectorAll('.portal-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'today')   loadToday();
+  if (name === 'all')     loadAll();
+  if (name === 'reports') loadReportSection();
+}
+
+function loadToday() {
+  fetch('/api/all_test_bookings').then(r => r.json()).then(list => {
+    const today = new Date().toISOString().split('T')[0];
+    renderBookings('todayList', list.filter(b => b.booking_date === today));
+  });
+}
+
+function loadAll() {
+  fetch('/api/all_test_bookings').then(r => r.json()).then(list => {
+    renderBookings('allList', list);
+  });
+}
+
+function renderBookings(elId, list) {
+  const el = document.getElementById(elId);
+  if (!list.length) {
+    el.innerHTML = '<p class="empty-msg">No bookings found.</p>';
+    return;
+  }
+  el.innerHTML = list.map(b => `
+    <div class="info-card ${b.status === 'Completed' ? 'card-green' : ''}">
+      <div class="info-card-header">
+        <strong>👤 ${b.patient_name}</strong>
+        <span class="badge ${b.status === 'Completed' ? 'badge-green' : 'badge-yellow'}">${b.status}</span>
+      </div>
+      <div class="info-card-body">
+        <span>📞 ${b.patient_contact}</span>
+        <span>🔬 ${b.test_name}</span>
+        <span>📅 ${b.booking_date} at ${b.booking_time}</span>
+        ${b.report_date ? '<span>📋 Report Date: <strong>' + b.report_date + '</strong></span>' : ''}
+      </div>
+      ${b.status !== 'Completed'
+        ? `<button class="btn-primary btn-sm mt-sm" onclick="completeTest(${b.id}, this)">
+             ✅ Mark as Complete
+           </button>`
+        : '<p class="completed-label">✅ Test Completed</p>'}
+      <p id="msg_${b.id}" class="form-msg"></p>
+    </div>`).join('');
+}
+
+function completeTest(id, btn) {
+  fetch('/api/complete_test', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ booking_id: id })
+  }).then(r => r.json()).then(d => {
+    if (d.success) {
+      const p = document.getElementById('msg_' + id);
+      p.style.color = '#22c55e';
+      p.textContent = 'Marked as complete!';
+      btn.remove();
+      setTimeout(() => { loadToday(); loadAll(); }, 1000);
+    }
+  });
+}
+
+function loadReportSection() {
+  fetch('/api/all_test_bookings').then(r => r.json()).then(list => {
+    const completed = list.filter(b => b.status === 'Completed');
+    const el = document.getElementById('reportSection');
+    if (!completed.length) {
+      el.innerHTML = '<p class="empty-msg">No completed tests yet. Mark tests as complete first.</p>';
+      return;
+    }
+    const today = new Date().toISOString().split('T')[0];
+    el.innerHTML = completed.map(b => `
+      <div class="info-card">
+        <div class="info-card-header">
+          <strong>👤 ${b.patient_name}</strong>
+          <span class="badge badge-green">Completed</span>
+        </div>
+        <div class="info-card-body">
+          <span>🔬 ${b.test_name}</span>
+          <span>📞 ${b.patient_contact}</span>
+          <span>📅 Test Date: ${b.booking_date}</span>
+          ${b.report_date
+            ? '<span>📋 Report Date Set: <strong>' + b.report_date + '</strong></span>'
+            : '<span class="text-muted">Report date not set yet</span>'}
+        </div>
+        ${!b.report_date ? `
+        <div class="form-inline mt-sm">
+          <input type="date" id="rd_${b.id}" value="" min="${today}">
+          <button class="btn-primary btn-sm" onclick="setReportDate(${b.id})">
+            📋 Set Report Date
+          </button>
+        </div>
+        <p id="rdMsg_${b.id}" class="form-msg"></p>` : `
+        <p class="completed-label">📋 Report Date Already Set</p>`}
+      </div>`).join('');
+  });
+}
+
+function setReportDate(id) {
+  const date = document.getElementById('rd_' + id).value;
+  const msg  = document.getElementById('rdMsg_' + id);
+  if (!date) { msg.style.color='#ef4444'; msg.textContent = 'Please select a date.'; return; }
+  fetch('/api/set_report_date', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ booking_id: id, report_date: date })
+  }).then(r => r.json()).then(d => {
+    msg.style.color = d.success ? '#22c55e' : '#ef4444';
+    msg.textContent = d.message;
+    if (d.success) setTimeout(loadReportSection, 1000);
+  });
+}
+
+// ── Profile ──
+function openProfileModal() { document.getElementById('profileModal').style.display = 'flex'; }
+function closeProfileModal() { document.getElementById('profileModal').style.display = 'none'; }
+function saveProfile() {
+  const msg = document.getElementById('profMsg');
+  fetch('/api/update_profile', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      role:        'pharmacist',
+      name:        document.getElementById('profName').value,
+      address:     document.getElementById('profAddress').value,
+      age:         document.getElementById('profAge').value,
+      blood_group: document.getElementById('profBlood').value
+    })
+  }).then(r => r.json()).then(d => {
+    msg.style.color = d.success ? '#22c55e' : '#ef4444';
+    msg.textContent = d.message;
+  });
+}
+
+function doLogout() { fetch('/api/logout').then(() => window.location.href = '/'); }
+
+document.getElementById('profileModal').addEventListener('click', function(e) {
+  if (e.target === this) this.style.display = 'none';
+});
+
+document.addEventListener('DOMContentLoaded', loadToday);
+</script>
+</body>
+</html>

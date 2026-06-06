@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Doctor Portal – DS Hospital</title>
+<link rel="stylesheet" href="/static/css/main.css">
+<link rel="stylesheet" href="/static/css/portal.css">
+</head>
+<body class="portal-body">
+
+<div class="portal-header">
+  <div class="portal-header-inner">
+    <a href="/" class="portal-logo">⚕ DS Hospital</a>
+    <div class="portal-user">
+      <span class="portal-user-name">👨‍⚕️ Dr. {{ doctor.name }}</span>
+      <button class="btn-outline-white" onclick="openProfileModal()">My Profile</button>
+      <button class="btn-danger-sm" onclick="doLogout()">Logout</button>
+    </div>
+  </div>
+</div>
+
+<div class="portal-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="portal-sidebar">
+    <nav class="sidebar-nav">
+      <button class="nav-item active" onclick="showSection('info', this)">📋 My Info</button>
+      <button class="nav-item" onclick="showSection('patients', this)">👥 My Patients</button>
+    </nav>
+  </aside>
+
+  <main class="portal-main">
+
+    <!-- ── INFO SECTION ── -->
+    <section id="sec-info" class="portal-section active">
+      <h2 class="section-title">Doctor Dashboard</h2>
+      <div class="info-card-large">
+        <div class="doc-profile-row">
+          <div class="doc-avatar-large">👨‍⚕️</div>
+          <div class="doc-profile-details">
+            <h3 class="doc-name">{{ doctor.name }}</h3>
+            <p id="topDeptDisplay" class="doc-dept">{{ doctor.department or 'Department not set' }}</p>
+            <div class="doc-meta-grid">
+              <span>📞 {{ doctor.contact }}</span>
+              <span>✉️ {{ doctor.email }}</span>
+              <span id="topChamberDisplay">🏠 Chamber: {{ doctor.chamber or 'N/A' }}</span>
+              <span>💰 Consultation Fees: ₹{{ doctor.fees }}</span>
+              {% if doctor.age %}<span>🎂 Age: {{ doctor.age }}</span>{% endif %}
+              {% if doctor.blood_group %}<span>🩸 Blood Group: {{ doctor.blood_group }}</span>{% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- DEGREE SECTION -->
+        <div class="degree-section">
+          <label class="field-label">📜 Degree / Qualifications</label>
+          <div id="degreeDisplay" class="degree-display">
+            {{ doctor.degree or 'No degree information added yet.' }}
+          </div>
+          <div id="degreeEditArea" style="display:none">
+            <textarea id="degreeInput" rows="3" class="form-textarea"
+              placeholder="e.g. MBBS, MD (Cardiology), DM, FACC">{{ doctor.degree or '' }}</textarea>
+            <div style="display:flex; gap:0.5rem; margin-top:0.5rem">
+              <button class="btn-primary btn-sm" onclick="saveDegree()">💾 Save Degree</button>
+              <button class="btn-outline btn-sm" onclick="cancelDegreeEdit()">Cancel</button>
+            </div>
+          </div>
+          <button class="btn-outline btn-sm mt-sm" onclick="editDegree()">✏️ Update Degree</button>
+          <p id="degreeMsg" class="form-msg"></p>
+        </div>
+
+        <!-- DEPARTMENT SECTION -->
+        <div class="degree-section" style="margin-top: 1.5rem;">
+  <label class="field-label">🏢 Assigned Department</label>
+  <div id="deptDisplay" class="degree-display">
+    {{ doctor.department or 'No department assigned yet.' }}
+  </div>
+  <div id="deptEditArea" style="display:none">
+    <select id="deptInput" class="form-textarea" style="height: auto; padding: 0.65rem 0.9rem;">
+      <option value="">-- Choose Department --</option>
+      <option value="Cardiology" {% if doctor.department == 'Cardiology' %}selected{% endif %}>Cardiology</option>
+      <option value="Neurology" {% if doctor.department == 'Neurology' %}selected{% endif %}>Neurology</option>
+      <option value="Pediatrics" {% if doctor.department == 'Pediatrics' %}selected{% endif %}>Pediatrics</option>
+      <option value="Orthopedics" {% if doctor.department == 'Orthopedics' %}selected{% endif %}>Orthopedics</option>
+      <option value="General Medicine" {% if doctor.department == 'General Medicine' %}selected{% endif %}>General Medicine</option>
+      <option value="Dermatology" {% if doctor.department == 'Dermatology' %}selected{% endif %}>Dermatology</option>
+      <option value="Gynaecology" {% if doctor.department == 'Gynaecology' %}selected{% endif %}>Gynaecology & Obstetrics</option>
+      <option value="Ophthalmology" {% if doctor.department == 'Ophthalmology' %}selected{% endif %}>Ophthalmology (Eye)</option>
+      <option value="ENT" {% if doctor.department == 'ENT' %}selected{% endif %}>ENT (Ear, Nose, Throat)</option>
+      <option value="Psychiatry" {% if doctor.department == 'Psychiatry' %}selected{% endif %}>Psychiatry</option>
+      <option value="Urology" {% if doctor.department == 'Urology' %}selected{% endif %}>Urology</option>
+      <option value="Gastroenterology" {% if doctor.department == 'Gastroenterology' %}selected{% endif %}>Gastroenterology</option>
+      <option value="Oncology" {% if doctor.department == 'Oncology' %}selected{% endif %}>Oncology (Cancer)</option>
+      <option value="Dental" {% if doctor.department == 'Dental' %}selected{% endif %}>Dental Surgery</option>
+    </select>
+    <div style="display:flex; gap:0.5rem; margin-top:0.5rem">
+      <button class="btn-primary btn-sm" onclick="saveDepartment()">💾 Save Department</button>
+      <button class="btn-outline btn-sm" onclick="cancelDeptEdit()">Cancel</button>
+    </div>
+  </div>
+  <button class="btn-outline btn-sm mt-sm" onclick="editDept()">✏️ Update Department</button>
+  <p id="deptMsg" class="form-msg"></p>
+</div>
+
+        <!-- CHAMBER SECTION -->
+        <div class="degree-section" style="margin-top: 1.5rem;">
+          <label class="field-label">🏠 Chamber Location / Details</label>
+          <div id="chamberDisplay" class="degree-display">
+            {{ doctor.chamber or 'No chamber location information added yet.' }}
+          </div>
+          <div id="chamberEditArea" style="display:none">
+            <input type="text" id="chamberInput" class="form-textarea" 
+              placeholder="e.g. Room 204, OPD Block B, 2nd Floor" value="{{ doctor.chamber or '' }}">
+            <div style="display:flex; gap:0.5rem; margin-top:0.5rem">
+              <button class="btn-primary btn-sm" onclick="saveChamber()">💾 Save Chamber</button>
+              <button class="btn-outline btn-sm" onclick="cancelChamberEdit()">Cancel</button>
+            </div>
+          </div>
+          <button class="btn-outline btn-sm mt-sm" onclick="editChamber()">✏️ Update Chamber</button>
+          <p id="chamberMsg" class="form-msg"></p>
+        </div>
+
+        <!-- FEES SECTION -->
+        <div class="degree-section" style="margin-top: 1.5rem;">
+          <label class="field-label">💰 Consultation Fees (₹)</label>
+          <div id="feesDisplay" class="degree-display">
+            {{ doctor.fees or 'Not set' }}
+          </div>
+          <div id="feesEditArea" style="display:none">
+            <input type="number" id="feesInput" class="form-textarea"
+              placeholder="e.g. 500" min="0" value="{{ doctor.fees or '' }}">
+            <div style="display:flex; gap:0.5rem; margin-top:0.5rem">
+              <button class="btn-primary btn-sm" onclick="saveFees()">💾 Save Fees</button>
+              <button class="btn-outline btn-sm" onclick="cancelFeesEdit()">Cancel</button>
+            </div>
+          </div>
+          <button class="btn-outline btn-sm mt-sm" onclick="editFees()">✏️ Update Fees</button>
+          <p id="feesMsg" class="form-msg"></p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ── PATIENTS SECTION ── -->
+    <section id="sec-patients" class="portal-section">
+      <h2 class="section-title">My Confirmed Patients</h2>
+      <p class="section-sub">
+        Patients whose appointments have been confirmed by the receptionist
+      </p>
+      <div id="patientsList" class="info-list">
+        <p class="empty-msg">Loading patients...</p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- PROFILE MODAL -->
+<div id="profileModal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeProfileModal()">✕</button>
+    <h2 class="modal-title">👨‍⚕️ My Profile</h2>
+    <div class="form-group">
+      <label>Full Name</label>
+      <input type="text" id="profName" value="{{ doctor.name }}">
+    </div>
+    <div class="form-group">
+      <label>Address</label>
+      <input type="text" id="profAddress" value="{{ doctor.address or '' }}">
+    </div>
+    <div class="form-group">
+      <label>Age</label>
+      <input type="number" id="profAge" value="{{ doctor.age or '' }}" min="1" max="100">
+    </div>
+    <div class="form-group">
+      <label>Blood Group</label>
+      <select id="profBlood">
+        <option value="">-- Select Blood Group --</option>
+        {% for bg in ['A+','A-','B+','B-','AB+','AB-','O+','O-'] %}
+        <option value="{{ bg }}" {% if doctor.blood_group == bg %}selected{% endif %}>{{ bg }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button class="btn-primary full-width" onclick="saveProfile()">Save Profile</button>
+    <p id="profMsg" class="form-msg"></p>
+  </div>
+</div>
+
+<script>
+function showSection(name, btn) {
+  document.querySelectorAll('.portal-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'patients') loadPatients();
+}
+
+function loadPatients() {
+  fetch('/api/my_patients').then(r => r.json()).then(list => {
+    const el = document.getElementById('patientsList');
+    if (!list.length) {
+      el.innerHTML = '<p class="empty-msg">No confirmed patients yet. Appointments need to be confirmed by the receptionist first.</p>';
+      return;
+    }
+    el.innerHTML = list.map(p => `
+      <div class="info-card">
+        <div class="info-card-header">
+          <strong>👤 ${p.name}</strong>
+          ${p.confirmed_date
+            ? '<span class="badge badge-green">Appt: ' + p.confirmed_date + '</span>'
+            : ''}
+        </div>
+        <div class="info-card-body">
+          <span>🎂 Age: ${p.age || 'Not provided'}</span>
+        </div>
+        <div class="health-issues-box">
+          <strong>Health Issues:</strong>
+          <p>${p.health_issues || 'No health issues recorded by patient.'}</p>
+        </div>
+      </div>`).join('');
+  });
+}
+
+// ── Degree ──
+function editDegree() {
+  document.getElementById('degreeDisplay').style.display = 'none';
+  document.getElementById('degreeEditArea').style.display = 'block';
+}
+function cancelDegreeEdit() {
+  document.getElementById('degreeDisplay').style.display = 'block';
+  document.getElementById('degreeEditArea').style.display = 'none';
+}
+function saveDegree() {
+  const deg = document.getElementById('degreeInput').value.trim();
+  const msg = document.getElementById('degreeMsg');
+  if (!deg) { msg.style.color='#ef4444'; msg.textContent='Degree cannot be empty.'; return; }
+  fetch('/api/update_degree', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ degree: deg })
+  }).then(r => r.json()).then(d => {
+    msg.style.color = '#22c55e';
+    msg.textContent = d.message;
+    document.getElementById('degreeDisplay').textContent = deg;
+    cancelDegreeEdit();
+  });
+}
+
+// ── Department ──
+function editDept() {
+  document.getElementById('deptDisplay').style.display = 'none';
+  document.getElementById('deptEditArea').style.display = 'block';
+}
+function cancelDeptEdit() {
+  document.getElementById('deptDisplay').style.display = 'block';
+  document.getElementById('deptEditArea').style.display = 'none';
+}
+function saveDepartment() {
+  const dept = document.getElementById('deptInput').value;
+  const msg = document.getElementById('deptMsg');
+  if (!dept) { msg.style.color='#ef4444'; msg.textContent='Please select a department.'; return; }
+  
+  fetch('/api/update_department', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ department: dept })
+  }).then(r => r.json()).then(d => {
+    msg.style.color = '#22c55e';
+    msg.textContent = d.message || 'Department updated successfully!';
+    document.getElementById('deptDisplay').textContent = dept;
+    document.getElementById('topDeptDisplay').textContent = dept;
+    cancelDeptEdit();
+  }).catch(() => {
+    msg.style.color='#ef4444'; msg.textContent='Error updating department.';
+  });
+}
+
+// ── Chamber ──
+function editChamber() {
+  document.getElementById('chamberDisplay').style.display = 'none';
+  document.getElementById('chamberEditArea').style.display = 'block';
+}
+function cancelChamberEdit() {
+  document.getElementById('chamberDisplay').style.display = 'block';
+  document.getElementById('chamberEditArea').style.display = 'none';
+}
+function saveChamber() {
+  const chamber = document.getElementById('chamberInput').value.trim();
+  const msg = document.getElementById('chamberMsg');
+  if (!chamber) { msg.style.color='#ef4444'; msg.textContent='Chamber cannot be empty.'; return; }
+  
+  fetch('/api/update_chamber', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chamber: chamber })
+  }).then(r => r.json()).then(d => {
+    msg.style.color = '#22c55e';
+    msg.textContent = d.message || 'Chamber updated successfully!';
+    document.getElementById('chamberDisplay').textContent = chamber;
+    document.getElementById('topChamberDisplay').innerHTML = `🏠 Chamber: ${chamber}`;
+    cancelChamberEdit();
+  }).catch(() => {
+    msg.style.color='#ef4444'; msg.textContent='Error updating chamber.';
+  });
+}
+
+// ── Fees ──
+function editFees() {
+  document.getElementById('feesDisplay').style.display = 'none';
+  document.getElementById('feesEditArea').style.display = 'block';
+}
+function cancelFeesEdit() {
+  document.getElementById('feesDisplay').style.display = 'block';
+  document.getElementById('feesEditArea').style.display = 'none';
+}
+function saveFees() {
+  const fees = document.getElementById('feesInput').value.trim();
+  const msg  = document.getElementById('feesMsg');
+  if (!fees || parseFloat(fees) <= 0) { msg.style.color='#ef4444'; msg.textContent='Please enter a valid fee amount.'; return; }
+  fetch('/api/update_fees', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fees: fees })
+  }).then(r => r.json()).then(d => {
+    msg.style.color = d.success ? '#22c55e' : '#ef4444';
+    msg.textContent = d.message;
+    if (d.success) {
+      document.getElementById('feesDisplay').textContent = fees;
+      cancelFeesEdit();
+    }
+  }).catch(() => {
+    msg.style.color='#ef4444'; msg.textContent='Error updating fees.';
+  });
+}
+
+// ── Profile ──
+function openProfileModal() { document.getElementById('profileModal').style.display = 'flex'; }
+function closeProfileModal() { document.getElementById('profileModal').style.display = 'none'; }
+function saveProfile() {
+  const msg = document.getElementById('profMsg');
+  fetch('/api/update_profile', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      role:        'doctor',
+      name:        document.getElementById('profName').value,
+      address:     document.getElementById('profAddress').value,
+      age:         document.getElementById('profAge').value,
+      blood_group: document.getElementById('profBlood').value
+    })
+  }).then(r => r.json()).then(d => {
+    msg.style.color = d.success ? '#22c55e' : '#ef4444';
+    msg.textContent = d.message;
+  });
+}
+
+function doLogout() { fetch('/api/logout').then(() => window.location.href = '/'); }
+
+document.getElementById('profileModal').addEventListener('click', function(e) {
+  if (e.target === this) this.style.display = 'none';
+});
+</script>
+</body>
+</html>

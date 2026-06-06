@@ -1,0 +1,204 @@
+/* ─────────────────────────────────────────────
+   DS HOSPITAL – MAIN CSS
+   ───────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Playfair+Display:wght@700;800&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --primary: #0f4c75;
+  --primary-light: #1b6ca8;
+  --accent: #1faa99;
+  --accent-light: #e0f7f4;
+  --danger: #e74c3c;
+  --warning: #f39c12;
+  --success: #27ae60;
+  --bg: #f0f4f8;
+  --surface: #ffffff;
+  --border: #d1dce8;
+  --text: #1a2a3a;
+  --text-muted: #6b7f94;
+  --shadow: 0 4px 20px rgba(15,76,117,0.10);
+  --radius: 14px;
+  --radius-sm: 8px;
+}
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* BG PATTERN */
+.bg-pattern {
+  position: fixed; inset: 0; z-index: -1;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(15,76,117,0.07) 0%, transparent 50%),
+    radial-gradient(circle at 85% 80%, rgba(31,170,153,0.07) 0%, transparent 50%),
+    linear-gradient(135deg, #f0f4f8 0%, #e8f0f9 100%);
+}
+
+/* ─── HEADER ─── */
+.site-header {
+  background: var(--primary);
+  padding: 0 2rem;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+}
+.header-inner {
+  max-width: 1200px; margin: 0 auto;
+  display: flex; align-items: center; padding: 1rem 0;
+}
+.logo-block { display: flex; align-items: center; gap: 1rem; }
+.logo-icon {
+  font-size: 2.4rem; background: var(--accent);
+  width: 54px; height: 54px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+}
+.site-title {
+  font-family: 'Playfair Display', serif;
+  color: #fff; font-size: 2rem; font-weight: 800;
+  letter-spacing: -0.5px; line-height: 1.1;
+}
+.site-tagline { color: rgba(255,255,255,0.65); font-size: 0.85rem; font-weight: 600; }
+
+/* ─── HOME ─── */
+.main-home {
+  max-width: 1100px; margin: 0 auto;
+  padding: 3rem 1.5rem;
+}
+.welcome-banner {
+  text-align: center; margin-bottom: 3rem;
+}
+.welcome-text {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.6rem; color: var(--primary);
+  font-weight: 800; margin-bottom: 0.5rem;
+}
+.welcome-sub { color: var(--text-muted); font-size: 1.1rem; }
+
+.role-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+.role-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 2.2rem 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  border: 2px solid transparent;
+  box-shadow: var(--shadow);
+  transition: all 0.25s ease;
+}
+.role-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-6px);
+  box-shadow: 0 12px 32px rgba(15,76,117,0.15);
+}
+.role-icon { font-size: 3rem; margin-bottom: 1rem; display: block; }
+.role-card h3 { font-size: 1.2rem; font-weight: 800; color: var(--primary); margin-bottom: 0.5rem; }
+.role-card p { font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; }
+.admin-card { border-top: 4px solid var(--primary); }
+
+/* ─── MODAL ─── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(15,76,117,0.45);
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(4px);
+  padding: 1rem;
+}
+.modal-box {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 2rem;
+  width: 100%; max-width: 480px;
+  max-height: 90vh; overflow-y: auto;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+.modal-wide { max-width: 600px; }
+.modal-close {
+  position: absolute; top: 1rem; right: 1rem;
+  background: none; border: none; font-size: 1.2rem;
+  cursor: pointer; color: var(--text-muted);
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s;
+}
+.modal-close:hover { background: #f0f0f0; }
+.modal-title { font-size: 1.4rem; font-weight: 800; color: var(--primary); margin-bottom: 1.5rem; }
+.modal-tabs {
+  display: flex; gap: 0.5rem; margin-bottom: 1.5rem;
+}
+.tab-btn {
+  flex: 1; padding: 0.6rem; border: 2px solid var(--border);
+  background: none; border-radius: var(--radius-sm);
+  font-family: 'Nunito', sans-serif; font-weight: 700;
+  cursor: pointer; color: var(--text-muted); transition: all 0.2s;
+}
+.tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.role-label { font-size: 1.1rem; font-weight: 700; color: var(--accent); margin-bottom: 1rem; }
+
+/* ─── FORMS ─── */
+.form-group { margin-bottom: 1rem; }
+.form-group label { display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 0.35rem; color: var(--text); }
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%; padding: 0.65rem 0.9rem;
+  border: 2px solid var(--border); border-radius: var(--radius-sm);
+  font-family: 'Nunito', sans-serif; font-size: 0.95rem;
+  color: var(--text); background: #fff;
+  transition: border 0.2s;
+  outline: none;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus { border-color: var(--accent); }
+.form-msg { font-size: 0.88rem; margin-top: 0.6rem; font-weight: 600; min-height: 1.2em; }
+.form-inline { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.form-card { background: var(--surface); border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow); margin-bottom: 1.5rem; }
+.form-textarea { width: 100%; padding: 0.65rem 0.9rem; border: 2px solid var(--border); border-radius: var(--radius-sm); font-family: 'Nunito', sans-serif; resize: vertical; }
+
+/* ─── BUTTONS ─── */
+.btn-primary {
+  background: var(--primary); color: #fff;
+  border: none; border-radius: var(--radius-sm);
+  padding: 0.7rem 1.5rem; font-family: 'Nunito', sans-serif;
+  font-weight: 700; cursor: pointer; font-size: 0.95rem;
+  transition: all 0.2s; display: inline-block;
+  margin-top: 0.5rem;
+}
+.btn-primary:hover { background: var(--primary-light); transform: translateY(-1px); }
+.btn-primary.btn-sm { padding: 0.4rem 0.9rem; font-size: 0.85rem; margin-top: 0; }
+.btn-outline {
+  background: none; color: var(--primary);
+  border: 2px solid var(--primary); border-radius: var(--radius-sm);
+  padding: 0.5rem 1.2rem; font-family: 'Nunito', sans-serif;
+  font-weight: 700; cursor: pointer; font-size: 0.9rem;
+  transition: all 0.2s; margin-left: 0.5rem;
+}
+.btn-outline:hover { background: var(--primary); color: #fff; }
+.btn-outline.btn-sm { padding: 0.35rem 0.8rem; font-size: 0.82rem; margin-left: 0; }
+.btn-danger-sm {
+  background: var(--danger); color: #fff;
+  border: none; border-radius: var(--radius-sm);
+  padding: 0.4rem 0.9rem; font-family: 'Nunito', sans-serif;
+  font-weight: 700; cursor: pointer; font-size: 0.85rem;
+  transition: all 0.2s; margin-left: 0.5rem;
+}
+.btn-danger-sm:hover { background: #c0392b; }
+.mt-sm { margin-top: 0.6rem; }
+
+/* ─── BADGES ─── */
+.badge {
+  display: inline-block; padding: 0.2rem 0.7rem;
+  border-radius: 999px; font-size: 0.78rem; font-weight: 700;
+}
+.badge-green { background: #d1fae5; color: #065f46; }
+.badge-yellow { background: #fef3c7; color: #92400e; }
+.badge-red { background: #fee2e2; color: #991b1b; }
