@@ -13,11 +13,13 @@ A sleek, responsive, and modern web application designed to streamline healthcar
 
 ---
 
-## 🚀 Live Demo
-
-You can try the live application hosted on Render here:
-
-👉 [Click Here to Open the App](https://ds-hospital.onrender.com)
+### 📖 READ THE USAGE OF BUTTONS AND WEBSITE BEFORE CLICKING ON THE LINK FOR EASIER UNDERSTANDING
+ 
+[![Click Here to Open 👉](https://img.shields.io/badge/Click%20Here%20to%20Open%20👉-Live%20Demo-FF6B6B?style=for-the-badge)](https://ds-hospital.onrender.com)
+&nbsp;
+[![📁 Repository](https://img.shields.io/badge/📁-View%20Repository-4ECDC4?style=for-the-badge)](https://github.com/D-Sarkar-2508/Hospital-Management-System)
+ 
+</div>
 
 ---
 
