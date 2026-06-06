@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Receptionist Portal – DS Hospital</title>
+<link rel="stylesheet" href="/static/css/main.css">
+<link rel="stylesheet" href="/static/css/portal.css">
+</head>
+<body class="portal-body">
+
+<div class="portal-header">
+  <div class="portal-header-inner">
+    <a href="/" class="portal-logo">⚕ DS Hospital</a>
+    <div class="portal-user">
+      <span class="portal-user-name">📋 {{ receptionist.name }}</span>
+      <button class="btn-outline-white" onclick="openProfileModal()">My Profile</button>
+      <button class="btn-danger-sm" onclick="doLogout()">Logout</button>
+    </div>
+  </div>
+</div>
+
+<div class="portal-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="portal-sidebar">
+    <nav class="sidebar-nav">
+      <button class="nav-item active" onclick="showSection('appointments', this)">📅 Appointments</button>
+      <button class="nav-item" onclick="showSection('ot', this)">🏨 OT Requests</button>
+    </nav>
+  </aside>
+
+  <main class="portal-main">
+
+    <!-- ── APPOINTMENTS ── -->
+    <section id="sec-appointments" class="portal-section active">
+      <h2 class="section-title">Appointment Requests</h2>
+      <p class="section-sub">
+        Confirm patient appointments. Once confirmed, the doctor can see the patient.
+      </p>
+      <div id="apptList" class="info-list">
+        <p class="empty-msg">Loading...</p>
+      </div>
+    </section>
+
+    <!-- ── OT REQUESTS ── -->
+    <section id="sec-ot" class="portal-section">
+      <h2 class="section-title">OT Booking Requests</h2>
+      <p class="section-sub">
+        Confirm OT bookings and assign a surgery date for the patient.
+      </p>
+      <div id="otList" class="info-list">
+        <p class="empty-msg">Loading...</p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PROFILE MODAL
+═══════════════════════════════════════════ -->
+<div id="profileModal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeProfileModal()">✕</button>
+    <h2 class="modal-title">📋 My Profile</h2>
+    <div class="form-group">
+      <label>Full Name</label>
+      <input type="text" id="profName" value="{{ receptionist.name }}">
+    </div>
+    <div class="form-group">
+      <label>Address</label>
+      <input type="text" id="profAddress" value="{{ receptionist.address or '' }}">
+    </div>
+    <div class="form-group">
+      <label>Age</label>
+      <input type="number" id="profAge" value="{{ receptionist.age or '' }}" min="1" max="100">
+    </div>
+    <div class="form-group">
+      <label>Blood Group</label>
+      <select id="profBlood">
+        <option value="">-- Select Blood Group --</option>
+        {% for bg in ['A+','A-','B+','B-','AB+','AB-','O+','O-'] %}
+        <option value="{{ bg }}" {% if receptionist.blood_group == bg %}selected{% endif %}>{{ bg }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button class="btn-primary full-width" onclick="saveProfile()">Save Profile</button>
+    <p id="profMsg" class="form-msg"></p>
+  </div>
+</div>
+
+<script>
+function showSection(name, btn) {
+  document.querySelectorAll('.portal-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'appointments') loadAppointments();
+  if (name === 'ot')           loadOT();
+}
+
+// ── Appointments ──
+function loadAppointments() {
+  fetch('/api/all_appointments').then(r => r.json()).then(list => {
+    const el = document.getElementById('apptList');
+    if (!list.length) {
+      el.innerHTML = '<p class="empty-msg">No appointment requests yet.</p>';
+      return;
+    }
+    const today = new Date().toISOString().split('T')[0];
+    el.innerHTML = list.map(a => {
+      // Determine background color border card modifier based on status
+      let cardClass = '';
+      if (a.status === 'Confirmed') cardClass = 'card-green';
+      if (a.status === 'Rejected') cardClass = 'card-red'; // Custom styling helper class
+
+      return `
+      <div class="info-card ${cardClass}">
+        <div class="info-card-header">
+          <strong>👤 ${a.patient_name}</strong>
+          <span class="badge ${a.status === 'Confirmed' ? 'badge-green' : a.status === 'Rejected' ? 'badge-red' : 'badge-yellow'}">${a.status}</span>
+        </div>
+        <div class="info-card-body">
+          <span>👨‍⚕️ Dr. ${a.doctor_name} (${a.doctor_department})</span>
+          <span>📅 Preferred Date: ${a.preferred_date}</span>
+          ${a.confirmed_date
+            ? '<span>✅ Confirmed for: <strong>' + a.confirmed_date + '</strong></span>'
+            : ''}
+        </div>
+        ${a.status === 'Pending' ? `
+          <div class="confirm-row" style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem;">
+            <label>Confirm for date:</label>
+            <input type="date" id="apptDate_${a.id}" min="${today}">
+            <button class="btn-primary btn-sm" onclick="confirmAppt(${a.id})">✅ Confirm Appointment</button>
+            <button class="btn-danger-sm" style="margin-left: 0; padding: 0.4rem 0.9rem;" onclick="rejectAppt(${a.id})">❌ Reject</button>
+          </div>
+          <p id="apptMsg_${a.id}" class="form-msg"></p>` : ''}
+      </div>`;
+    }).join('');
+  });
+}
+
+function confirmAppt(id) {
+  const date = document.getElementById('apptDate_' + id).value;
+  const msg  = document.getElementById('apptMsg_' + id);
+  if (!date) { msg.style.color='#ef4444'; msg.textContent = 'Please select a confirmation date.'; return; }
+  fetch('/api/confirm_appointment', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ appt_id: id, confirmed_date: date })
+  }).then(r => r.json()).then(d => {
+    msg.style.color = d.success ? '#22c55e' : '#ef4444';
+    msg.textContent = d.message;
+    if (d.success) setTimeout(loadAppointments, 1200);
+  });
+}
+
+// Add this new function directly below confirmAppt(id)
+function rejectAppt(id) {
+  const msg = document.getElementById('apptMsg_' + id);
+  if (!confirm('Are you sure you want to reject this appointment request?')) return;
+
+  fetch('/api/reject_appointment', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ appt_id: id })
+  }).then(r => r.json()).then(d => {
+    if (d.success) {
+      loadAppointments();
+    } else {
+      msg.style.color = '#ef4444';
+      msg.textContent = d.message || 'Error rejecting appointment.';
+    }
+  });
+}
+
+// ── OT ──
+function loadOT() {
+  fetch('/api/all_ot_requests').then(r => r.json()).then(list => {
+    const el = document.getElementById('otList');
+    if (!list.length) {
+      el.innerHTML = '<p class="empty-msg">No OT requests yet.</p>';
+      return;
+    }
+    const today = new Date().toISOString().split('T')[0];
+    el.innerHTML = list.map(b => {
+      let cardClass = '';
+      if (b.status === 'Confirmed') cardClass = 'card-green';
+      if (b.status === 'Rejected')  cardClass = 'card-red';
+
+      return `
+      <div class="info-card ${cardClass}">
+        <div class="info-card-header">
+          <strong>👤 ${b.patient_name}</strong>
+          <span class="badge ${b.status === 'Confirmed' ? 'badge-green' : b.status === 'Rejected' ? 'badge-red' : 'badge-yellow'}">${b.status}</span>
+        </div>
+        <div class="info-card-body">
+          <span>🏨 ${b.ot_name}</span>
+          <span>👨‍⚕️ Dr. ${b.doctor_name}</span>
+          <span>💰 ₹${b.ot_cost.toLocaleString()}</span>
+          ${b.confirmed_date
+            ? '<span>📅 Surgery Date: <strong>' + b.confirmed_date + '</strong></span>'
+            : ''}
+        </div>
+        ${b.status === 'Pending' ? `
+          <div class="confirm-row" style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem;">
+            <label>Assign surgery date:</label>
+            <input type="date" id="otDate_${b.id}" min="${today}">
+            <button class="btn-primary btn-sm" onclick="confirmOT(${b.id})">✅ Confirm OT</button>
+            <button class="btn-danger-sm" style="margin-left: 0; padding: 0.4rem 0.9rem;" onclick="rejectOT(${b.id})">❌ Reject</button>
+          </div>
+          <p id="otMsg_${b.id}" class="form-msg"></p>` : ''}
+      </div>`;
+    }).join('');
+  });
+}
+
+function confirmOT(id) {
+  const date = document.getElementById('otDate_' + id).value;
+  const msg  = document.getElementById('otMsg_' + id);
+  if (!date) { msg.style.color='#ef4444'; msg.textContent = 'Please select a surgery date.'; return; }
+  fetch('/api/confirm_ot', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ot_id: id, confirmed_date: date })
+  }).then(r => r.json()).then(d => {
+    if (d.success) setTimeout(loadOT, 800);
+    else { msg.style.color='#ef4444'; msg.textContent = 'Error confirming OT.'; }
+  });
+}
+
+// Add this function directly below your confirmOT(id) function
+function rejectOT(id) {
+  const msg = document.getElementById('otMsg_' + id);
+  if (!confirm('Are you sure you want to reject this OT booking request?')) return;
+
+  fetch('/api/reject_ot', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ot_id: id })
+  }).then(r => r.json()).then(d => {
+    if (d.success) {
+      loadOT();
+    } else {
+      msg.style.color = '#ef4444';
+      msg.textContent = d.message || 'Error rejecting OT request.';
+    }
+  });
+}
+  
+// ── Profile ──
+function openProfileModal() { document.getElementById('profileModal').style.display = 'flex'; }
+function closeProfileModal() { document.getElementById('profileModal').style.display = 'none'; }
+function saveProfile() {
+  const msg = document.getElementById('profMsg');
+  fetch('/api/update_profile', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      role:        'receptionist',
+      name:        document.getElementById('profName').value,
+      address:     document.getElementById('profAddress').value,
+      age:         document.getElementById('profAge').value,
+      blood_group: document.getElementById('profBlood').value
+    })
+  }).then(r => r.json()).then(d => {
+    msg.style.color = d.success ? '#22c55e' : '#ef4444';
+    msg.textContent = d.message;
+  });
+}
+
+function doLogout() { fetch('/api/logout').then(() => window.location.href = '/'); }
+
+document.getElementById('profileModal').addEventListener('click', function(e) {
+  if (e.target === this) this.style.display = 'none';
+});
+
+document.addEventListener('DOMContentLoaded', loadAppointments);
+</script>
+</body>
+</html>

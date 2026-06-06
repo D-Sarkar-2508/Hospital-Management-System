@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Patient Portal – DS Hospital</title>
+<link rel="stylesheet" href="/static/css/main.css">
+<link rel="stylesheet" href="/static/css/portal.css">
+</head>
+<body class="portal-body">
+
+<div class="portal-header">
+  <div class="portal-header-inner">
+    <a href="/" class="portal-logo">⚕ DS Hospital</a>
+    <div class="portal-user">
+      <span class="portal-user-name">👤 {{ patient.name }}</span>
+      <button class="btn-outline-white" onclick="openProfileModal()">My Profile</button>
+      <button class="btn-danger-sm" onclick="doLogout()">Logout</button>
+    </div>
+  </div>
+</div>
+
+<div class="portal-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="portal-sidebar">
+    <nav class="sidebar-nav">
+      <button class="nav-item active" onclick="showSection('doctors', this)">🏥 Doctors</button>
+      <button class="nav-item" onclick="showSection('tests', this)">🔬 Tests</button>
+      <button class="nav-item" onclick="showSection('appointments', this)">📅 Appointments</button>
+      <button class="nav-item" onclick="showSection('health', this)">💊 Health Issues</button>
+      <button class="nav-item" onclick="showSection('reports', this)">📄 Reports</button>
+      <button class="nav-item" onclick="showSection('ot', this)">🏨 OT</button>
+    </nav>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="portal-main">
+
+    <!-- ── DOCTORS SECTION ── -->
+    <section id="sec-doctors" class="portal-section active">
+      <h2 class="section-title">Find a Doctor</h2>
+      <p class="section-sub">Select a department to view available doctors</p>
+      <div class="dept-grid">
+        <button class="dept-card" onclick="loadDoctors('General Medicine')">
+          <span class="dept-icon">🩺</span><span>General Medicine</span>
+        </button>
+        <button class="dept-card" onclick="loadDoctors('Cardiology')">
+          <span class="dept-icon">❤️</span><span>Cardiology (Heart)</span>
+        </button>
+        <button class="dept-card" onclick="loadDoctors('Neurology')">
+          <span class="dept-icon">🧠</span><span>Neurology (Brain)</span>
+        </button>
+        <button class="dept-card" onclick="loadDoctors('Oncology')">
+          <span class="dept-icon">🎗️</span><span>Oncology (Cancer)</span>
+        </button>
+        <button class="dept-card" onclick="loadDoctors('Pediatrics')">
+          <span class="dept-icon">👶</span><span>Pediatrics (Children)</span>
+        </button>
+        <button class="dept-card" onclick="loadDoctors('Gynecology')">
+          <span class="dept-icon">🌸</span><span>Gynecology (Women)</span>
+        </button>
+        <button class="dept-card" onclick="loadDoctors('Orthopedics')">
+          <span class="dept-icon">🦴</span><span>Orthopedics (Bones)</span>
+        </button>
+        <button class="dept-card" onclick="loadDoctors('Emergency')">
+          <span class="dept-icon">🚨</span><span>Emergency</span>
+        </button>
+      </div>
+      <div id="doctorsList"></div>
+    </section>
+
+    <!-- ── TESTS SECTION ── -->
+    <section id="sec-tests" class="portal-section">
+      <h2 class="section-title">Book a Lab Test</h2>
+
+      <h3 class="sub-title">My Test Booking Status</h3>
+      <div id="myTestsList" class="info-list">
+        <p class="empty-msg">Loading...</p>
+      </div>
+
+      <p class="section-sub" style="margin-top:1.5rem;">Search and click any test to book it</p>
+      <input type="text" id="testSearch" class="search-bar"
+             placeholder="🔍 Search test name (e.g. Blood Sugar, MRI)..."
+             oninput="filterTests()">
+      <div id="testsList" class="tests-grid"></div>
+    </section>
+
+    <!-- ── APPOINTMENTS SECTION ── -->
+    <section id="sec-appointments" class="portal-section">
+      <h2 class="section-title">Appointments</h2>
+      <div class="form-card">
+        <h3 class="card-title">Book New Appointment</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Select Department</label>
+            <select id="apptDept" onchange="loadApptDoctors()">
+              <option value="">-- Select Department --</option>
+              <option value="General Medicine">General Medicine</option>
+              <option value="Cardiology">Cardiology</option>
+              <option value="Neurology">Neurology</option>
+              <option value="Oncology">Oncology</option>
+              <option value="Pediatrics">Pediatrics</option>
+              <option value="Gynecology">Gynecology</option>
+              <option value="Orthopedics">Orthopedics</option>
+              <option value="Emergency">Emergency</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Select Doctor</label>
+            <select id="apptDoctor">
+              <option value="">-- Select Doctor --</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Preferred Date</label>
+          <input type="date" id="apptDate">
+        </div>
+        <button class="btn-primary" onclick="bookAppointment()">📅 Request Appointment</button>
+        <p id="apptMsg" class="form-msg"></p>
+      </div>
+      <h3 class="sub-title">My Appointment History</h3>
+      <div id="myAppointmentsList" class="info-list">
+        <p class="empty-msg">Loading...</p>
+      </div>
+    </section>
+
+    <!-- ── HEALTH ISSUES ── -->
+    <section id="sec-health" class="portal-section">
+      <h2 class="section-title">My Health Issues</h2>
+      <div class="form-card">
+        <h3 class="card-title">Update Physical Problems</h3>
+        <p class="text-muted" style="margin-bottom:1rem">
+          Describe your current symptoms, medical history, allergies, or medications.
+          Your doctor can see this information.
+        </p>
+        <div class="form-group">
+          <label>Health Issues / Physical Problems</label>
+          <textarea id="healthIssues" rows="7"
+            placeholder="e.g. Chest pain since 2 days, diabetic since 2019, allergic to penicillin...">{{ patient.health_issues or '' }}</textarea>
+        </div>
+        <button class="btn-primary" onclick="updateHealth()">💾 Save Health Issues</button>
+        <p id="healthMsg" class="form-msg"></p>
+      </div>
+    </section>
+
+    <!-- ── REPORTS ── -->
+    <section id="sec-reports" class="portal-section">
+      <h2 class="section-title">My Test Reports</h2>
+      <p class="section-sub">View your booked tests and expected report delivery dates</p>
+      <div id="reportsList" class="info-list">
+        <p class="empty-msg">Loading...</p>
+      </div>
+    </section>
+
+    <!-- ── OT SECTION ── -->
+    <section id="sec-ot" class="portal-section">
+      <h2 class="section-title">Operation Theatre (OT)</h2>
+
+      <h3 class="sub-title">OT Price List</h3>
+      <div class="ot-grid">
+        {% for ot in ot_list %}
+        <div class="ot-price-card">
+          <div class="ot-name">{{ ot.name }}</div>
+          <div class="ot-cost">₹ {{ "{:,.0f}".format(ot.cost) }}</div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <h3 class="sub-title">Book OT</h3>
+      <div class="form-card">
+        <div class="form-group">
+          <label>Select OT Type</label>
+          <select id="otSelect">
+            {% for ot in ot_list %}
+            <option value="{{ ot.name }}|{{ ot.cost }}">
+              {{ ot.name }} – ₹{{ "{:,.0f}".format(ot.cost) }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Doctor Name</label>
+          <input type="text" id="otDoctor" placeholder="Enter the name of the operating doctor">
+        </div>
+        <button class="btn-primary" onclick="bookOT()">🏨 Request OT Booking</button>
+        <p id="otMsg" class="form-msg"></p>
+      </div>
+
+      <h3 class="sub-title">My OT Booking Status</h3>
+      <div id="myOTList" class="info-list">
+        <p class="empty-msg">Loading...</p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     PROFILE MODAL
+═══════════════════════════════════════════ -->
+<div id="profileModal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeProfileModal()">✕</button>
+    <h2 class="modal-title">👤 My Profile</h2>
+    <div class="form-group">
+      <label>Full Name</label>
+      <input type="text" id="profName" value="{{ patient.name }}">
+    </div>
+    <div class="form-group">
+      <label>Address</label>
+      <input type="text" id="profAddress" value="{{ patient.address or '' }}">
+    </div>
+    <div class="form-group">
+      <label>Age</label>
+      <input type="number" id="profAge" value="{{ patient.age or '' }}" min="1" max="120">
+    </div>
+    <div class="form-group">
+      <label>Blood Group</label>
+      <select id="profBlood">
+        <option value="">-- Select Blood Group --</option>
+        {% for bg in ['A+','A-','B+','B-','AB+','AB-','O+','O-'] %}
+        <option value="{{ bg }}" {% if patient.blood_group == bg %}selected{% endif %}>{{ bg }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Health Issues</label>
+      <textarea id="profHealth" rows="3"
+        placeholder="Current health issues...">{{ patient.health_issues or '' }}</textarea>
+    </div>
+    <button class="btn-primary full-width" onclick="saveProfile()">Save Profile</button>
+    <p id="profMsg" class="form-msg"></p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     TEST BOOKING MODAL
+═══════════════════════════════════════════ -->
+<div id="testBookingModal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeTestModal()">✕</button>
+    <h2 class="modal-title">🔬 Book Test</h2>
+    <div class="selected-test-info">
+      <div class="selected-test-name" id="selectedTestName"></div>
+      <div class="selected-test-price" id="selectedTestPrice"></div>
+    </div>
+    <div class="form-group">
+      <label>Select Date</label>
+      <input type="date" id="testDate">
+    </div>
+    <div class="form-group">
+      <label>Select Time</label>
+      <input type="time" id="testTime">
+    </div>
+    <button class="btn-primary full-width" onclick="confirmTestBooking()">Confirm Booking</button>
+    <button class="btn-outline full-width mt-sm" onclick="closeTestModal()">Cancel</button>
+    <p id="testBookMsg" class="form-msg"></p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     DOCTOR APPOINTMENT MODAL
+═══════════════════════════════════════════ -->
+<div id="apptDoctorModal" class="modal-overlay" style="display:none">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeApptDocModal()">✕</button>
+    <h2 class="modal-title">📅 Book Appointment</h2>
+    <div class="selected-test-info">
+      <div class="selected-test-name" id="apptDocName"></div>
+      <div class="selected-test-price" id="apptDocInfo"></div>
+    </div>
+    <div class="form-group">
+      <label>Preferred Date</label>
+      <input type="date" id="apptDocDate">
+    </div>
+    <button class="btn-primary full-width" onclick="confirmDoctorAppt()">Send Appointment Request</button>
+    <button class="btn-outline full-width mt-sm" onclick="closeApptDocModal()">Cancel</button>
+    <p id="apptDocMsg" class="form-msg"></p>
+  </div>
+</div>
+
+<script>
+const TESTS = {{ tests | tojson }};
+let selectedTest = null;
+let selectedDoctorId = null;
+
+// ── Section navigation ──
+function showSection(name, btn) {
+  document.querySelectorAll('.portal-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'tests') { renderTests(TESTS); loadMyTests(); }
+  if (name === 'reports') loadReports();
+  if (name === 'ot') { loadOTBookings(); }
+  if (name === 'appointments') loadMyAppointments();
+}
+
+// ── Doctors ──
+function loadDoctors(dept) {
+  const el = document.getElementById('doctorsList');
+  el.innerHTML = '<p class="empty-msg">Loading doctors...</p>';
+  fetch('/api/doctors/' + encodeURIComponent(dept))
+    .then(r => r.json())
+    .then(docs => {
+      if (!docs.length) {
+        el.innerHTML = '<p class="empty-msg">No doctors found in this department.</p>';
+        return;
+      }
+      el.innerHTML = `<h3 class="sub-title">${dept} – ${docs.length} Doctor(s)</h3>` +
+        docs.map(d => `
+          <div class="doctor-card">
+            <div class="doctor-avatar">👨‍⚕️</div>
+            <div class="doctor-info">
+              <h4>${d.name}</h4>
+              <p class="doctor-degree">${d.degree || 'Degree not updated'}</p>
+              <p class="doctor-meta">
+                🏠 <strong>${d.chamber || 'N/A'}</strong>
+                &nbsp;|&nbsp; 💰 Fees: <strong>₹${d.fees}</strong>
+              </p>
+            </div>
+            <button class="btn-primary btn-sm"
+              onclick="openApptDocModal(${d.id}, '${d.name.replace(/'/g,"\\'")}',
+                '${(d.degree||'').replace(/'/g,"\\'")}', ${d.fees}, '${d.chamber||''}')">
+              Book Appointment
+            </button>
+          </div>`).join('');
+    });
+}
+
+// ── Tests ──
+function renderTests(list) {
+  const el = document.getElementById('testsList');
+  if (!list.length) {
+    el.innerHTML = '<p class="empty-msg">No tests found matching your search.</p>';
+    return;
+  }
+  el.innerHTML = list.map(t => `
+    <div class="test-item" onclick="openTestModal('${t.name.replace(/'/g,"\\'")}', ${t.price})">
+      <span class="test-name">${t.name}</span>
+      <span class="test-tag">₹${t.price}</span>
+    </div>`).join('');
+}
+
+function filterTests() {
+  const q = document.getElementById('testSearch').value.toLowerCase();
+  renderTests(TESTS.filter(t => t.name.toLowerCase().includes(q)));
+}
+
+function openTestModal(name, price) {
+  selectedTest = { name, price };
+  document.getElementById('selectedTestName').textContent = name;
+  document.getElementById('selectedTestPrice').textContent = 'Price: ₹' + price;
+  document.getElementById('testDate').min = new Date().toISOString().split('T')[0];
+  document.getElementById('testBookMsg').textContent = '';
+  document.getElementById('testDate').value = '';
+  document.getElementById('testTime').value = '';
+  document.getElementById('testBookingModal').style.display = 'flex';
+}
+function closeTestModal() {
+  document.getElementById('testBookingModal').style.display = 'none';
+}
+function confirmTestBooking() {
+  const date = document.getElementById('testDate').value;
+  const time = document.getElementById('testTime').value;
+  const msg = document.getElementById('testBookMsg');
+  if (!date || !time) { msg.style.color='#ef4444'; msg.textContent = 'Please select both date and time.'; return; }
+  fetch('/api/book_test', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ test_name: selectedTest.name, test_price: selectedTest.price,
+                           booking_date: date, booking_time: time })
+  }).then(r => r.json()).then(d => {
+    msg.style.color = d.success ? '#22c55e' : '#ef4444';
+    msg.textContent = d.message;
+    if (d.success) { setTimeout(closeTestModal, 1500); loadMyTests(); }
+  });
+}
+
+function loadMyTests() {
+  fetch('/api/my_tests').then(r => r.json()).then(list => {
+    const el = document.getElementById('myTestsList');
+    if (!list.length) { el.innerHTML = '<p class="empty-msg">No tests booked yet.</p>'; return; }
+    el.innerHTML = list.map(b => {
+      let cardClass = '';
+      let badgeClass = 'badge-yellow';
+      if (b.status === 'Completed') { cardClass = 'card-green'; badgeClass = 'badge-green'; }
+
+      return `
+      <div class="info-card ${cardClass}">
+        <div class="info-card-header">
+          <strong>🔬 ${b.test_name}</strong>
+          <span class="badge ${badgeClass}">${b.status}</span>
+        </div>
+        <div class="info-card-body">
+          <span>💰 ₹${b.test_price}</span>
+          <span>📅 Booked: ${b.booking_date} at ${b.booking_time}</span>
+          ${b.status === 'Completed' && b.report_date
+            ? `<span>📋 Report Ready by: <strong>${b.report_date}</strong></span>`
+            : b.report_date
+            ? `<span>📋 Report Expected: <strong>${b.report_date}</strong></span>`
+            : `<span class="text-muted">⏳ Report date not assigned yet</span>`}
+        </div>
+      </div>`;
+    }).join('');
+  });
+}
+
+// ── Appointments ──
+function loadApptDoctors() {
+  const dept = document.getElementById('apptDept').value;
+  if (!dept) return;
+  fetch('/api/doctors/' + encodeURIComponent(dept)).then(r => r.json()).then(docs => {
+    const sel = document.getElementById('apptDoctor');
+    sel.innerHTML = '<option value="">-- Select Doctor --</option>' +
+      docs.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+  });
+}
+
+function bookAppointment() {
+  const docId = document.getElementById('apptDoctor').value;
+  const date  = document.getElementById('apptDate').value;
+  const msg   = document.getElementById('apptMsg');
+  if (!docId || !date) { msg.style.color='#ef4444'; msg.textContent = 'Please select a doctor and preferred date.'; return; }
+  fetch('/api/book_appointment', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ doctor_id: parseInt(docId), preferred_date: date })
+  }).then(r => r.json()).then(d => {
+    msg.style.color = d.success ? '#22c55e' : '#ef4444';
+    msg.textContent = d.message;
+    if (d.success) { loadMyAppointments(); document.getElementById('apptDate').value=''; }
+  });
+}
+
+function loadMyAppointments() {
+  fetch('/api/my_appointments').then(r => r.json()).then(list => {
+    const el = document.getElementById('myAppointmentsList');
+    if (!list.length) { el.innerHTML = '<p class="empty-msg">No appointments yet.</p>'; return; }
+    
+    el.innerHTML = list.map(a => {
+      // Setup dynamic CSS class adjustments based on backend state status
+      let cardClass = '';
+      let badgeClass = 'badge-yellow'; // default for Pending
+      
+      if (a.status === 'Confirmed') {
+        cardClass = 'card-green';
+        badgeClass = 'badge-green';
+      } else if (a.status === 'Rejected') {
+        cardClass = 'card-red'; // Match the admin layout style guide accent colors
+        badgeClass = 'badge-red';
+      }
+
+      return `
+      <div class="info-card ${cardClass}">
+        <div class="info-card-header">
+          <strong>Dr. ${a.doctor_name}</strong>
+          <span class="badge ${badgeClass}">${a.status}</span>
+        </div>
+        <div class="info-card-body">
+          <span>🏥 ${a.doctor_department}</span>
+          <span>📅 Preferred: ${a.preferred_date}</span>
+          ${a.status === 'Confirmed' && a.confirmed_date 
+            ? `<span>✅ Confirmed for: <strong>${a.confirmed_date}</strong></span>` 
+            : a.status === 'Rejected' 
+            ? `<span style="color: var(--danger); font-weight: 700;">❌ This request was declined. Please choose an alternate date or specialist.</span>`
+            : `<span class="text-muted">⏳ Awaiting confirmation from receptionist</span>`}
+        </div>
+      </div>`;
+    }).join('');
+  });
+}
+
+function openApptDocModal(id, name, degree, fees, chamber) {
+  selectedDoctorId = id;
+  document.getElementById('apptDocName').textContent = name;
+  document.getElementById('apptDocInfo').innerHTML =
+    `${degree} &nbsp;|&nbsp; Fees: ₹${fees} &nbsp;|&nbsp; ${chamber}`;
+  document.getElementById('apptDocDate').min = new Date().toISOString().split('T')[0];
+  document.getElementById('apptDocDate').value = '';
+  document.getElementById('apptDocMsg').textContent = '';
+  document.getElementById('apptDoctorModal').style.display = 'flex';
+}
+function closeApptDocModal() {
+  document.getElementById('apptDoctorModal').style.display = 'none';
+}
+function confirmDoctorAppt() {
+  const date = document.getElementById('apptDocDate').value;
+  const msg  = document.getElementById('apptDocMsg');
+  if (!date) { msg.style.color='#ef4444'; msg.textContent = 'Please select a preferred date.'; return; }
+  fetch('/api/book_appointment', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ doctor_id: selectedDoctorId, preferred_date: date })
+  }).then(r => r.json()).then(d => {
+    msg.style.color = d.success ? '#22c55e' : '#ef4444';
+    msg.textContent = d.message;
+    if (d.success) setTimeout(closeApptDocModal, 1500);
+  });
+}
+
+// ── Health ──
+function updateHealth() {
+  const hi  = document.getElementById('healthIssues').value;
+  const msg = document.getElementById('healthMsg');
+  fetch('/api/update_health_issues', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ health_issues: hi })
+  }).then(r => r.json()).then(d => {
+    msg.style.color = d.success ? '#22c55e' : '#ef4444';
+    msg.textContent = d.message;
+  });
+}
+
+// ── Reports ──
+function loadReports() {
+  fetch('/api/my_tests').then(r => r.json()).then(list => {
+    const el = document.getElementById('reportsList');
+    if (!list.length) { el.innerHTML = '<p class="empty-msg">No tests booked yet.</p>'; return; }
+    el.innerHTML = list.map(b => `
+      <div class="info-card ${b.status==='Completed'?'card-green':''}">
+        <div class="info-card-header">
+          <strong>🔬 ${b.test_name}</strong>
+          <span class="badge ${b.status==='Completed'?'badge-green':'badge-yellow'}">${b.status}</span>
+        </div>
+        <div class="info-card-body">
+          <span>💰 ₹${b.test_price}</span>
+          <span>📅 Booked: ${b.booking_date} at ${b.booking_time}</span>
+          ${b.report_date
+            ? '<span>📋 Report Expected: <strong>' + b.report_date + '</strong></span>'
+            : '<span class="text-muted">Report date not set yet</span>'}
+        </div>
+      </div>`).join('');
+  });
+}
+
+// ── OT ──
+function loadOTBookings() {
+  fetch('/api/my_ot_bookings').then(r => r.json()).then(list => {
+    const el = document.getElementById('myOTList');
+    if (!list.length) { el.innerHTML = '<p class="empty-msg">No OT bookings yet.</p>'; return; }
+    el.innerHTML = list.map(b => `
+      <div class="info-card ${b.status==='Confirmed'?'card-green':''}">
+        <div class="info-card-header">
+          <strong>🏨 ${b.ot_name}</strong>
+          <span class="badge ${b.status==='Confirmed'?'badge-green':'badge-yellow'}">${b.status}</span>
+        </div>
+        <div class="info-card-body">
+          <span>👨‍⚕️ Dr. ${b.doctor_name}</span>
+          <span>💰 ₹${b.ot_cost.toLocaleString()}</span>
+          ${b.confirmed_date
+            ? '<span>📅 OT Date: <strong>' + b.confirmed_date + '</strong></span>'
+            : '<span class="text-muted">Awaiting confirmation from receptionist</span>'}
+        </div>
+      </div>`).join('');
+  });
+}
+
+function bookOT() {
+  const sel    = document.getElementById('otSelect').value.split('|');
+  const doctor = document.getElementById('otDoctor').value.trim();
+  const msg    = document.getElementById('otMsg');
+  if (!doctor) { msg.style.color='#ef4444'; msg.textContent = 'Please enter the doctor name.'; return; }
+  fetch('/api/book_ot', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ot_name: sel[0], ot_cost: parseFloat(sel[1]), doctor_name: doctor })
+  }).then(r => r.json()).then(d => {
+    msg.style.color = d.success ? '#22c55e' : '#ef4444';
+    msg.textContent = d.message;
+    if (d.success) { document.getElementById('otDoctor').value = ''; loadOTBookings(); }
+  });
+}
+
+// ── Profile ──
+function openProfileModal() { document.getElementById('profileModal').style.display = 'flex'; }
+function closeProfileModal() { document.getElementById('profileModal').style.display = 'none'; }
+function saveProfile() {
+  const msg = document.getElementById('profMsg');
+  fetch('/api/update_profile', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      role: 'patient',
+      name:         document.getElementById('profName').value,
+      address:      document.getElementById('profAddress').value,
+      age:          document.getElementById('profAge').value,
+      blood_group:  document.getElementById('profBlood').value,
+      health_issues:document.getElementById('profHealth').value
+    })
+  }).then(r => r.json()).then(d => {
+    msg.style.color = d.success ? '#22c55e' : '#ef4444';
+    msg.textContent = d.message;
+  });
+}
+
+function doLogout() { fetch('/api/logout').then(() => window.location.href = '/'); }
+
+// ── Init ──
+document.addEventListener('DOMContentLoaded', () => {
+  const today = new Date().toISOString().split('T')[0];
+  ['apptDate','apptDocDate','testDate'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.min = today;
+  });
+  renderTests(TESTS);
+});
+
+// Close modals on background click
+['profileModal','testBookingModal','apptDoctorModal'].forEach(id => {
+  document.getElementById(id).addEventListener('click', function(e) {
+    if (e.target === this) this.style.display = 'none';
+  });
+});
+</script>
+</body>
+</html>
